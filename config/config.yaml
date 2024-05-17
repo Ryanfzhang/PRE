@@ -1,0 +1,25 @@
+epochs: 500
+batch_size: 8
+lr: 5.0e-4
+wd: 5.0e-4
+height: 60
+width: 96
+test_freq: 10
+
+hidden_channels: 32
+diffusion_embedding_size: 32
+side_channels: 1
+drop_path: 0.1
+beta_start: 0.0001
+beta_end: 0.5
+num_steps: 50
+num_heads: 8
+num_samples: 10
+schedule: "quad"
+in_len: 12
+out_len: 12
+missing_ratio: 0.1
+warm_up: 100
+patch_size: 2
+
+target_strategy: "random"
