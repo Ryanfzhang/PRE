@@ -51,12 +51,16 @@ class IAP_base(nn.Module):
         current_alpha = self.alpha_torch[t]  # (B,1,1,1,1)
         noise = torch.randn_like(observed_data)
 
-        mean = (observed_data*cond_mask).sum(dim=1,keepdim=True)/(cond_mask.sum(dim=1, keepdim=True)+1e-5)
-        observed_data_imputed = torch.where(observed_mask.bool(), observed_data, mean.expand_as(observed_data))
-        noisy_data = (current_alpha ** 0.5) * observed_data_imputed + (1.0 - current_alpha) ** 0.5 * noise
+        mean = (observed_data * cond_mask).sum(dim=1,keepdim=True)/(cond_mask.sum(dim=1, keepdim=True)+1e-5)
+        mean_ = mean.expand_as(observed_data)
+
+        observed_data_imputed = torch.where(cond_mask.bool(), observed_data, mean_)
+
+        noisy_data = (current_alpha ** 0.5) * (observed_data - mean) + (1.0 - current_alpha) ** 0.5 * noise
         noisy_data = noisy_data.to(self.device)
 
-        total_input = self.set_input_to_diffmodel(noisy_data, observed_data, cond_mask)
+        total_input = torch.stack([observed_data_imputed, (1-cond_mask)*noisy_data], 3)
+
         predicted = self.diffusion_model(total_input, cond_mask, t)
 
         target_mask = observed_mask - cond_mask
@@ -75,11 +79,12 @@ class IAP_base(nn.Module):
             for i in range(n_samples):
                 # generate noisy observation for unconditional model
                 current_sample = torch.randn_like(observed_data).to(self.device) + mean
+                observed_data_imputed = torch.where(observed_mask.bool(), observed_data, mean.expand_as(observed_data))
+
                 for t in range(self.num_steps - 1, -1, -1):
-                    cond_obs = (observed_mask * observed_data).unsqueeze(3)
-                    noisy_target = ((1 - observed_mask) * (current_sample)).unsqueeze(3)
-                    diff_input = torch.cat([cond_obs, noisy_target], dim=3)  # (B, T, K, 2, H, W)
-                    predicted = self.diffusion_model(diff_input, observed_mask, (torch.ones(B) * t).long().to(self.device))
+                    noisy_target = ((1 - observed_mask) * current_sample)
+                    total_input = torch.stack([observed_data_imputed, noisy_target], 3)
+                    predicted = self.diffusion_model(total_input, observed_mask, (torch.ones(B) * t).long().to(self.device))
 
                     coeff1 = (1-self.alpha_prev[t])*(self.alpha_hat[t])**0.5 / (1 - self.alpha[t])
                     coeff2 = ((1-self.alpha_hat[t])*(self.alpha_prev[t])**0.5) / (1 - self.alpha[t])
@@ -116,7 +121,7 @@ class SpatialTemporalEncoding(nn.Module):
         self.output_projection = Conv1d_with_init(config['hidden_channels']+config['side_channels'], 1, 1)
         nn.init.zeros_(self.output_projection.weight)
 
-        self.spatial_encoding = nn.Conv2d(2*self.config['hidden_channels'], self.config['hidden_channels'], 3, 1, 1)
+        self.spatial_encoding = nn.Conv2d(self.config['hidden_channels'], self.config['hidden_channels'], 3, 1, 1)
         self.time_encoding = LinearAttentionTransformer(dim=self.config['hidden_channels'], depth=1, heads=1, max_seq_len=16, n_local_attn_heads=0, local_attn_window_size=0)
         self.position_embedding = self.get_position_embeding().unsqueeze(1).unsqueeze(0)
         self.diffusion_embedding = DiffusionEmbedding(num_steps=config['num_steps'], embedding_dim=config['diffusion_embedding_size'])
@@ -134,8 +139,8 @@ class SpatialTemporalEncoding(nn.Module):
         diffusion_emb = diffusion_emb.unsqueeze(1).unsqueeze(1).unsqueeze(-1).unsqueeze(-1)
 
         input = x + diffusion_emb
-        input = torch.cat([input, self.position_embedding.expand_as(input)], dim=3)
-        input = input.reshape(B*T*K, 2*self.config['hidden_channels'], H, W)
+        # input = torch.cat([input, self.position_embedding.expand_as(input)], dim=3)
+        input = input.reshape(B*T*K, self.config['hidden_channels'], H, W)
 
         # spatial encoding
         x = self.spatial_encoding(input)  # B*T*K, C_h, H, W

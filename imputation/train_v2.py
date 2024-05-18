@@ -11,12 +11,12 @@ import numpy as np
 
 from dataset.dataset import PRE8dDataset
 from utils import check_dir, masked_mae, masked_mse
-from model.diffusion import IAP_base
+from model.diffusion_v2 import IAP_base
 
 with open("./config/config.yaml", 'r') as f:
     config = yaml.safe_load(f)
 
-base_dir = "./log/diffusion/"
+base_dir = "./log/diffusion_v2/"
 device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
 check_dir(base_dir)
 timestamp = time.strftime('%Y%m%d_%H%M%S', time.localtime())
