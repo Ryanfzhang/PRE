@@ -22,7 +22,7 @@ from model.grin import GRINet
 with open("./config/config_mae.yaml", 'r') as f:
     config = yaml.safe_load(f)
 
-base_dir = "./runs_8d/grin/"
+base_dir = "./log/grin/"
 device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
 check_dir(base_dir)
 timestamp = time.strftime('%Y%m%d_%H%M%S', time.localtime())
