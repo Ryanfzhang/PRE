@@ -530,6 +530,7 @@ class MTGNN(nn.Module):
         self._idx = torch.arange(self._num_nodes)
 
         self._mtgnn_layers = nn.ModuleList()
+        self._out_dim = out_dim
 
         self._graph_constructor = GraphConstructor(
             num_nodes, subgraph_size, node_dim, alpha=tanhalpha, xd=xd
@@ -698,5 +699,5 @@ class MTGNN(nn.Module):
         X = F.relu(self._end_conv_1(X))
         X = self._end_conv_2(X)
         X = X.permute(0,1,3,2).contiguous()
-        X = X.view(batch_size, seq_len, 1, height, width)
+        X = X.view(batch_size, self._out_dim, 1, height, width)
         return X

@@ -82,8 +82,6 @@ class PRE8dDataset(Dataset):
         chla = self.chla_scaler.transform(chla)
         mean = np.nanmean(chla[:648], axis=0)[np.newaxis,:,:,:]
         chla = np.nan_to_num(chla, nan=0.)
-        chla = chla_mask.astype(float)*chla + (1-chla_mask.astype(float))*mean
-        chla = np.nan_to_num(chla, nan=0.)
 
         mask = chla_mask.astype(np.float32)
         return chla, mask, mean
