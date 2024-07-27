@@ -13,17 +13,17 @@ from timm.scheduler.cosine_lr import CosineLRScheduler
 from einops import repeat, rearrange
 import torchcde
 
-from dataset.dataset import PREDataset, PRE8dDataset
+from dataset.dataset import PRE8dDataset
 from utils import check_dir, masked_mae, masked_mse, masked_cor
 from model.diffusion import IAP_base
 from model.mae import MaskedAutoEncoder
 from model.cf import NCF
 
 
-with open("./config_mae.yaml", 'r') as f:
+with open("./config/config_mae.yaml", 'r') as f:
     config = yaml.safe_load(f)
 
-base_dir = "./runs_8d/lin_itp/"
+base_dir = "./log/lin_itp/"
 device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
 check_dir(base_dir)
 timestamp = time.strftime('%Y%m%d_%H%M%S', time.localtime())
@@ -34,12 +34,12 @@ print(config)
 logging.info(config)
 
 
-train_dataset = PRE8dDataset(data_root='./data/PRE/8d', in_len=config['in_len'], 
+train_dataset = PRE8dDataset(data_root='/home/mafzhang/data/PRE/8d', in_len=config['in_len'], 
                         out_len=config['out_len'],missing_ratio=config['missing_ratio'],
                          mode='train')
 chla_scaler = train_dataset.chla_scaler
 train_dloader = DataLoader(train_dataset, config['batch_size'], shuffle=True)
-test_dloader = DataLoader(PRE8dDataset(data_root='./data/PRE/8d', in_len=config['in_len'], 
+test_dloader = DataLoader(PRE8dDataset(data_root='/home/mafzhang/data/PRE/8d', in_len=config['in_len'], 
                         out_len=config['out_len'],missing_ratio=config['missing_ratio'],
                          mode='test'), 1, shuffle=False)
 

@@ -34,7 +34,6 @@ logging.info(config)
 train_dataset = PRE8dDataset(data_root='/home/mafzhang/data/PRE/8d', in_len=config['in_len'],
                         out_len=config['out_len'],missing_ratio=config['missing_ratio'],
                          mode='train')
-chla_scaler = train_dataset.chla_scaler
 train_dloader = DataLoader(train_dataset, config['batch_size'], shuffle=True)
 test_dloader = DataLoader(PRE8dDataset(data_root='/home/mafzhang/data/PRE/8d', in_len=config['in_len'],
                         out_len=config['out_len'],missing_ratio=config['missing_ratio'],

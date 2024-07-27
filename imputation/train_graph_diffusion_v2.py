@@ -27,7 +27,6 @@ logging.info(config)
 
 
 train_dataset = PRE8dDataset(data_root='/home/mafzhang/data/PRE/8d/', in_len=config['in_len'], out_len=config['out_len'], missing_ratio=config['missing_ratio'], mode='train')
-chla_scaler = train_dataset.chla_scaler
 train_dloader = DataLoader(train_dataset, config['batch_size'], shuffle=True, prefetch_factor=2, num_workers=2)
 test_dloader = DataLoader(PRE8dDataset(data_root='/home/mafzhang/data/PRE/8d/', in_len=config['in_len'], out_len=config['out_len'], missing_ratio=config['missing_ratio'], mode='test'), config['batch_size'], shuffle=False)
 adj = np.load("/home/mafzhang/data/PRE/8d/adj.npy")
@@ -43,7 +42,7 @@ high_bound = torch.from_numpy(train_dataset.max).float().to(device)
 
 model = IAP_base(config, low_bound, high_bound)
 model = model.to(device)
-train_process = tqdm(range(config['epochs']))
+train_process = tqdm(range(1, config['epochs']+1))
 optimizer = torch.optim.Adam(model.parameters(), config['lr'], weight_decay=config['wd'])
 
 p1 = int(0.75 * config["epochs"])

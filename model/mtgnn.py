@@ -511,16 +511,6 @@ class MTGNN(nn.Module):
         super(MTGNN, self).__init__()
 
         device = torch.device("cuda:0")
-        A_tidle = torch.eye(60*96)
-        A_tidle = A_tidle.to(device)
-
-        for i in range(60):
-            for j in range(96):
-                A_tidle[i*96 + j, i*96 + max(0,j-1)] = 1
-                A_tidle[i*96 + j, i*96 + min(95,j+1)] = 1
-                A_tidle[i*96 + j, max(0, i-1)*96 + j] = 1
-                A_tidle[i*96 + j, min(59, i+1)*96 + j] = 1
-        self.A_tilde = A_tidle
         self._gcn_true = gcn_true
         self._build_adj_true = build_adj
         self._num_nodes = num_nodes
@@ -660,10 +650,10 @@ class MTGNN(nn.Module):
         Return types:
             * **X** (PyTorch FloatTensor) - Output sequence for prediction, with shape (batch_size, seq_len, num_nodes, 1).
         """
-        batch_size, seq_len, channels, height, width = X_in.size()
-        X_in = X_in.permute(0,2,3,4,1).contiguous()
-        X_in = X_in.view(batch_size, channels, height*width, seq_len)
-        A_tilde = self.A_tilde
+        batch_size, seq_len, channels, nodes = X_in.size()
+        mean = X_in.mean(1, keepdim=True).detach()
+        X_in = X_in - mean
+        X_in = X_in.permute(0,2,3,1).contiguous()
 
         assert (
             seq_len == self._seq_length
@@ -699,5 +689,5 @@ class MTGNN(nn.Module):
         X = F.relu(self._end_conv_1(X))
         X = self._end_conv_2(X)
         X = X.permute(0,1,3,2).contiguous()
-        X = X.view(batch_size, self._out_dim, 1, height, width)
+        X = X + mean
         return X

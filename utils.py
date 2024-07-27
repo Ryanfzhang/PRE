@@ -51,13 +51,25 @@ def masked_cor(preds, labels, mask):
 
 
 def masked_huber_loss(preds, labels, mask):
-    delta = 0.6
+    delta = 1.
     mask = mask.float()
     huber_mse = 0.5 * (preds - labels)**2
     huber_mae = delta * (torch.abs(preds - labels) - 0.5 * delta)
     loss = torch.where(torch.abs(preds - labels)<=delta, huber_mse, huber_mae)
     loss = loss * mask
     return torch.sum(loss)/torch.sum(mask)
+
+def huber_loss(preds, labels):
+    delta = 0.6
+    huber_mse = 0.5 * (preds - labels)**2
+    huber_mae = delta * (torch.abs(preds - labels) - 0.5 * delta)
+    loss = torch.where(torch.abs(preds - labels)<=delta, huber_mse, huber_mae)
+    return loss
+    
+def mse_loss(preds, labels):
+    mse = (preds-labels)**2
+    return mse
+    
 
 def seed_everything(seed: int):
     import random, os
